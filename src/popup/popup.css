@@ -1,0 +1,486 @@
+/* Kendo Filler — popup styling.
+   Palette taken from the product logo: deep navy, Kendo blue, red accent. */
+
+:root {
+  --navy: #101c33;
+  --navy-2: #17253f;
+  --navy-3: #1e2f4d;
+  --blue: #1f7ae0;
+  --blue-hi: #3b93ff;
+  --red: #e03b3b;
+  --text: #eaf1fb;
+  --text-dim: #9db0cb;
+  --line: rgba(255, 255, 255, 0.09);
+  --ok: #3ddc84;
+  --warn: #f0b429;
+  --err: #ff6b6b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 400px;
+  background: var(--navy);
+  color: var(--text);
+  font: 13px/1.45 "Segoe UI", Roboto, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- header ---------- */
+.kf-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #0d1729 0%, #16294b 55%, #1f4f96 100%);
+  border-bottom: 1px solid var(--line);
+}
+
+.kf-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  flex: 0 0 auto;
+  /* transparent: the artwork carries its own shape on the gradient header */
+  background: transparent;
+}
+
+.kf-header-text h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.kf-header-text p {
+  margin: 1px 0 0;
+  font-size: 10.5px;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ---------- scope ---------- */
+.kf-scope {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--navy-2);
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+
+.kf-scope-label {
+  color: var(--text-dim);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+}
+
+.kf-scope-value {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kf-badge {
+  flex: 0 0 auto;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  border: 1px solid var(--line);
+}
+
+.kf-badge.kf-badge-on {
+  background: rgba(61, 220, 132, 0.14);
+  color: var(--ok);
+  border-color: rgba(61, 220, 132, 0.35);
+}
+
+.kf-badge.kf-badge-off {
+  background: rgba(240, 180, 41, 0.13);
+  color: var(--warn);
+  border-color: rgba(240, 180, 41, 0.3);
+}
+
+/* ---------- blocks ---------- */
+.kf-block {
+  padding: 10px 14px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.kf-block-title {
+  margin: 0 0 6px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.kf-hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.kf-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 32px;
+  padding: 3px 0;
+}
+
+.kf-row-mode {
+  gap: 10px;
+}
+
+.kf-row-title {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.kf-row-title small {
+  color: var(--text-dim);
+  font-size: 10.5px;
+}
+
+.kf-row-config {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.kf-static {
+  padding-right: 2px;
+  text-align: right;
+  max-width: 132px;
+}
+
+.kf-row.kf-off .kf-row-title,
+.kf-row.kf-off .kf-row-config {
+  opacity: 0.45;
+}
+
+.kf-row.kf-off .kf-select,
+.kf-row.kf-off .kf-num {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ---------- controls ---------- */
+.kf-select,
+.kf-num {
+  background: var(--navy-3);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 11.5px;
+}
+
+.kf-select:focus,
+.kf-num:focus,
+.kf-btn:focus-visible {
+  outline: 2px solid var(--blue-hi);
+  outline-offset: 1px;
+}
+
+.kf-select-wide {
+  flex: 0 0 190px;
+}
+
+.kf-range {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kf-range em {
+  color: var(--text-dim);
+  font-style: normal;
+}
+
+.kf-num {
+  width: 58px;
+  text-align: right;
+}
+
+.kf-num-narrow {
+  width: 40px;
+}
+
+.kf-switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 18px;
+  display: inline-block;
+}
+
+.kf-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+
+.kf-slider {
+  position: absolute;
+  inset: 0;
+  background: #35476a;
+  border-radius: 999px;
+  transition: background 0.15s ease;
+  pointer-events: none;
+}
+
+.kf-slider::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.kf-switch input:checked + .kf-slider {
+  background: var(--blue);
+}
+
+.kf-switch input:checked + .kf-slider::after {
+  transform: translateX(16px);
+}
+
+.kf-switch input:focus-visible + .kf-slider {
+  box-shadow: 0 0 0 2px var(--blue-hi);
+}
+
+.kf-extras {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.kf-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.kf-check input {
+  accent-color: var(--blue);
+}
+
+/* ---------- actions ---------- */
+.kf-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+}
+
+.kf-btn {
+  font: inherit;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  padding: 9px 12px;
+}
+
+.kf-btn-primary {
+  flex: 1 1 auto;
+  background: linear-gradient(180deg, var(--blue-hi), var(--blue));
+  color: #fff;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 10px rgba(31, 122, 224, 0.35);
+}
+
+.kf-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.07);
+}
+
+.kf-btn-ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.kf-btn-ghost:hover:not(:disabled) {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.kf-btn:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.kf-btn-primary.kf-busy::after {
+  content: "";
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  margin-left: 8px;
+  vertical-align: -1px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: kf-spin 0.7s linear infinite;
+}
+
+@keyframes kf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- status ---------- */
+.kf-status {
+  padding: 0 14px 12px;
+}
+
+.kf-status-line {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.kf-status-line.kf-error {
+  color: var(--err);
+}
+
+.kf-counts {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.kf-count {
+  font-size: 11px;
+  color: var(--text-dim);
+  background: var(--navy-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 3px 7px;
+}
+
+.kf-count b {
+  color: var(--text);
+}
+
+.kf-count.kf-ok b {
+  color: var(--ok);
+}
+
+.kf-count.kf-warn b {
+  color: var(--warn);
+}
+
+.kf-count.kf-err b {
+  color: var(--err);
+}
+
+.kf-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-top: 8px;
+  color: var(--blue-hi);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.kf-diag {
+  margin-top: 8px;
+  max-height: 210px;
+  overflow: auto;
+  background: #0c1526;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 11px;
+}
+
+.kf-diag h3 {
+  margin: 6px 0 4px;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.kf-diag h3:first-child {
+  margin-top: 0;
+}
+
+.kf-diag ul {
+  margin: 0;
+  padding-left: 15px;
+}
+
+.kf-diag li {
+  margin-bottom: 3px;
+  word-break: break-word;
+}
+
+.kf-diag .kf-t {
+  color: var(--blue-hi);
+}
+
+.kf-diag .kf-v {
+  color: var(--ok);
+}
+
+.kf-diag .kf-r {
+  color: var(--warn);
+}
+
+.kf-diag .kf-f {
+  color: var(--err);
+}
+
+.kf-diag .kf-req::after {
+  content: " *";
+  color: var(--red);
+  font-weight: 700;
+}
+
+/* ---------- footer ---------- */
+.kf-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 14px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--navy-2);
+}
+
+.kf-footer .kf-link {
+  margin-top: 0;
+}

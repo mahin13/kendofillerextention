@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Kendo Filler — Advanced settings</title>
+    <link rel="stylesheet" href="../popup/popup.css" />
+    <style>
+      body {
+        width: auto;
+        max-width: 640px;
+        margin: 0 auto;
+        padding-bottom: 24px;
+      }
+      .kf-opt {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+      }
+      .kf-opt label {
+        flex: 1 1 auto;
+      }
+      .kf-opt small {
+        display: block;
+        color: var(--text-dim);
+      }
+      .kf-num {
+        width: 90px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="kf-header">
+      <img src="../../assets/logo.png" alt="" class="kf-logo" />
+      <div class="kf-header-text">
+        <h1>Kendo Filler</h1>
+        <p>Advanced settings</p>
+      </div>
+    </header>
+
+    <main class="kf-block">
+      <div class="kf-opt">
+        <label for="maxPasses">
+          Maximum fill passes
+          <small>Safety limit for dependency chains (spec §14/§25). Default 10.</small>
+        </label>
+        <input type="number" id="maxPasses" class="kf-num" min="1" max="25" />
+      </div>
+
+      <div class="kf-opt">
+        <label for="timeBudget">
+          Session time budget (seconds)
+          <small>A session stops and reports once this is reached. Default 60.</small>
+        </label>
+        <input type="number" id="timeBudget" class="kf-num" min="5" max="600" />
+      </div>
+
+      <div class="kf-opt">
+        <label for="onlyEmpty">
+          Fill only empty fields
+          <small>Off by default: Autofill overwrites existing values when you click it.</small>
+        </label>
+        <input type="checkbox" id="onlyEmpty" />
+      </div>
+
+      <div class="kf-opt">
+        <label for="highlight">
+          Highlight filled fields
+          <small>Briefly outlines each field as it is filled.</small>
+        </label>
+        <input type="checkbox" id="highlight" />
+      </div>
+
+      <p class="kf-hint" id="saved" aria-live="polite">Changes are saved automatically.</p>
+      <button class="kf-btn kf-btn-ghost" id="reset">Reset all settings</button>
+    </main>
+
+    <script src="options.js"></script>
+  </body>
+</html>

@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Kendo Filler — demo &amp; test page</title>
+
+    <!-- Real Kendo UI for jQuery from the Telerik CDN.
+         When this page is opened from the chrome-extension:// origin the extension CSP
+         blocks the CDN, so the page silently degrades to native/Kendo-shaped markup and
+         still exercises every fallback path. Serve it over http:// (see the banner) to
+         test the real widget APIs. -->
+    <link
+      rel="stylesheet"
+      href="https://kendo.cdn.telerik.com/2023.1.117/styles/kendo.default-v2.min.css"
+    />
+    <script src="https://kendo.cdn.telerik.com/2023.1.117/js/jquery.min.js"></script>
+    <script src="https://kendo.cdn.telerik.com/2023.1.117/js/kendo.all.min.js"></script>
+
+    <style>
+      body {
+        font: 14px/1.5 "Segoe UI", Roboto, system-ui, sans-serif;
+        margin: 0;
+        background: #f4f6fa;
+        color: #16233a;
+      }
+      header {
+        background: linear-gradient(135deg, #0d1729, #1f4f96);
+        color: #fff;
+        padding: 16px 22px;
+      }
+      header h1 {
+        margin: 0;
+        font-size: 20px;
+      }
+      header p {
+        margin: 4px 0 0;
+        opacity: 0.85;
+        font-size: 12.5px;
+      }
+      .banner {
+        margin: 0;
+        padding: 10px 22px;
+        font-size: 12.5px;
+        background: #fff5d6;
+        border-bottom: 1px solid #e8d79a;
+      }
+      .banner code {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 1px 4px;
+        border-radius: 3px;
+      }
+      #submitAlarm {
+        display: none;
+        margin: 0;
+        padding: 12px 22px;
+        background: #b3261e;
+        color: #fff;
+        font-weight: 700;
+      }
+      main {
+        padding: 18px 22px 60px;
+        max-width: 1080px;
+      }
+      fieldset {
+        background: #fff;
+        border: 1px solid #dfe5ee;
+        border-radius: 10px;
+        margin: 0 0 16px;
+        padding: 12px 16px 16px;
+      }
+      legend {
+        font-weight: 700;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #1f4f96;
+        padding: 0 6px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 12px 18px;
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      label {
+        font-size: 12.5px;
+        font-weight: 600;
+      }
+      .required {
+        color: #d32f2f;
+        font-weight: 700;
+      }
+      input[type="text"],
+      input[type="email"],
+      input[type="url"],
+      input[type="tel"],
+      input[type="number"],
+      input[type="date"],
+      input[type="time"],
+      input[type="datetime-local"],
+      input[type="month"],
+      input[type="week"],
+      input[type="password"],
+      select,
+      textarea {
+        font: inherit;
+        padding: 5px 7px;
+        border: 1px solid #c6cede;
+        border-radius: 6px;
+        background: #fff;
+      }
+      input[readonly],
+      input[disabled],
+      select[disabled] {
+        background: #eef1f6;
+        color: #7a869c;
+      }
+      .note {
+        font-size: 11.5px;
+        color: #6b7a94;
+      }
+      .radio-group label,
+      .check-line label {
+        font-weight: 400;
+        font-size: 13px;
+      }
+      .radio-group {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 8px;
+      }
+      button {
+        font: inherit;
+        padding: 8px 14px;
+        border-radius: 7px;
+        border: 1px solid #c6cede;
+        background: #fff;
+        cursor: pointer;
+      }
+      button[type="submit"] {
+        background: #1f7ae0;
+        border-color: #1f7ae0;
+        color: #fff;
+        font-weight: 700;
+      }
+      .switch-native {
+        width: 42px;
+        height: 22px;
+      }
+      #status {
+        font-size: 12px;
+        color: #445;
+      }
+      iframe {
+        width: 100%;
+        height: 190px;
+        border: 1px solid #dfe5ee;
+        border-radius: 8px;
+        background: #fff;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h1>Kendo Filler — demo &amp; test page</h1>
+      <p id="status">Checking Kendo UI…</p>
+    </header>
+
+    <p class="banner">
+      <strong>To test against real Kendo widgets:</strong> Chrome does not allow extensions to
+      inject scripts into <code>chrome-extension://</code> pages, and the extension CSP blocks
+      the Telerik CDN here. Serve the extension folder over http and open this page from there —
+      e.g. <code>npx http-server . -p 8080</code> (or <code>python -m http.server 8080</code>),
+      then visit <code>http://localhost:8080/demo/demo.html</code>. Every native control below
+      works either way.
+    </p>
+
+    <p id="submitAlarm">
+      ⚠ FORM SUBMIT WAS TRIGGERED — Kendo Filler must never do this. (This banner only appears if
+      you clicked Save yourself.)
+    </p>
+
+    <main>
+      <!-- The form never posts anywhere; submission is blocked and reported. -->
+      <form id="demoForm" action="javascript:void(0)">
+        <!-- ================= 1. Required detection ================= -->
+        <fieldset>
+          <legend>1 · Required-field detection (spec §4)</legend>
+          <div class="grid">
+            <div class="form-group">
+              <label for="reqMarkerSpan">Portfolio Name <span class="required">*</span></label>
+              <input type="text" id="reqMarkerSpan" name="reqMarkerSpan" />
+              <span class="note">Required via marker element in the label.</span>
+            </div>
+            <div class="form-group">
+              <label for="reqMarkerText">Client Reference *</label>
+              <input type="text" id="reqMarkerText" name="reqMarkerText" />
+              <span class="note">Required via '*' inside the label text.</span>
+            </div>
+            <div class="form-group">
+              <label for="reqAria">Legal Entity</label>
+              <input type="text" id="reqAria" name="reqAria" aria-required="true" />
+              <span class="note">Required via aria-required.</span>
+            </div>
+            <div class="form-group">
+              <label for="reqAttr">Deal Code</label>
+              <input type="text" id="reqAttr" name="reqAttr" required />
+              <span class="note">Required via the required attribute.</span>
+            </div>
+            <div class="form-group">
+              <label for="reqMvc">Mandate Id</label>
+              <input
+                type="text"
+                id="reqMvc"
+                name="reqMvc"
+                data-val="true"
+                data-val-required="Mandate Id is required"
+              />
+              <span class="note">Required via MVC/Kendo validation metadata.</span>
+            </div>
+            <div class="form-group">
+              <label for="optionalField">Internal Comment</label>
+              <input type="text" id="optionalField" name="optionalField" />
+              <span class="note">Optional — must be skipped in Required Only mode.</span>
+            </div>
+          </div>
+          <p class="note">
+            * Footnote: this asterisk belongs to prose, not to a field, and must never make a
+            field required.
+          </p>
+        </fieldset>
+
+        <!-- ================= 2. Dropdowns ================= -->
+        <fieldset>
+          <legend>2 · Dropdowns (spec §6)</legend>
+          <div class="grid">
+            <div class="form-group">
+              <label for="kendoDdl">Base Currency <span class="required">*</span></label>
+              <input id="kendoDdl" name="kendoDdl" />
+              <span class="note">Kendo DropDownList with an optionLabel placeholder.</span>
+            </div>
+            <div class="form-group">
+              <label for="kendoCombo">Counterparty</label>
+              <input id="kendoCombo" name="kendoCombo" />
+              <span class="note">Kendo ComboBox.</span>
+            </div>
+            <div class="form-group">
+              <label for="nativeSelect">Region <span class="required">*</span></label>
+              <select id="nativeSelect" name="nativeSelect">
+                <option value="">-- Select --</option>
+                <option value="" disabled>Please select a region</option>
+                <option value="emea">EMEA</option>
+                <option value="apac">APAC</option>
+              </select>
+              <span class="note">Native select: placeholder + disabled option must be skipped.</span>
+            </div>
+            <div class="form-group">
+              <label for="emptyDdl">Sub-Fund (no records)</label>
+              <input id="emptyDdl" name="emptyDdl" />
+              <span class="note">Kendo DropDownList with an empty data source.</span>
+            </div>
+            <div class="form-group">
+              <label for="parentDdl">Asset Class <span class="required">*</span></label>
+              <input id="parentDdl" name="parentDdl" />
+              <span class="note">Cascading parent.</span>
+            </div>
+            <div class="form-group">
+              <label for="childDdl">Instrument <span class="required">*</span></label>
+              <input id="childDdl" name="childDdl" />
+              <span class="note">Cascades from Asset Class — only fillable after the parent.</span>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- ================= 3. TreeView ================= -->
+        <fieldset>
+          <legend>3 · Kendo TreeView (spec §7)</legend>
+          <label>Book Hierarchy <span class="required">*</span></label>
+          <div id="bookTree"></div>
+          <p class="note">
+            The first node is disabled and the second is a structural group, so the filler must
+            pick the first genuinely selectable node.
+          </p>
+        </fieldset>
+
+        <!-- ================= 4/5. Checkbox + switch ================= -->
+        <fieldset>
+          <legend>4 &amp; 5 · Checkboxes and toggles (spec §8, §9)</legend>
+          <div class="grid">
+            <div class="form-group check-line">
+              <label><input type="checkbox" id="cbPlain" name="cbPlain" /> Include Cash Balances</label>
+              <span class="note">Plain checkbox.</span>
+            </div>
+            <div class="form-group check-line">
+              <label><input type="checkbox" id="cbPrechecked" name="cbPrechecked" checked /> Netting Enabled</label>
+              <span class="note">Already checked — must not be toggled off needlessly.</span>
+            </div>
+            <div class="form-group check-line">
+              <label><input type="checkbox" id="cbDisabled" name="cbDisabled" disabled /> Locked Option</label>
+              <span class="note">Disabled — must be skipped.</span>
+            </div>
+            <div class="form-group">
+              <label for="kendoSwitch">Auto Reconcile <span class="required">*</span></label>
+              <input type="checkbox" id="kendoSwitch" name="kendoSwitch" />
+              <span class="note">Kendo Switch.</span>
+            </div>
+            <div class="form-group">
+              <label for="nativeSwitch">Email Alerts</label>
+              <input
+                type="checkbox"
+                id="nativeSwitch"
+                name="nativeSwitch"
+                role="switch"
+                class="switch-native"
+              />
+              <span class="note">Native ARIA switch.</span>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- ================= 6. Radio groups ================= -->
+        <fieldset>
+          <legend>6 · Radio groups (spec §10)</legend>
+          <div class="grid">
+            <div class="form-group">
+              <label>Is Benchmarked <span class="required">*</span></label>
+              <div class="radio-group">
+                <label><input type="radio" name="benchmarked" value="Yes" /> Yes</label>
+                <label><input type="radio" name="benchmarked" value="No" /> No</label>
+              </div>
+              <span class="note">Yes/No group — honours the popup preference.</span>
+            </div>
+            <div class="form-group">
+              <label>Valuation Basis</label>
+              <div class="radio-group">
+                <label><input type="radio" name="basis" value="dirty" /> Dirty Price</label>
+                <label><input type="radio" name="basis" value="clean" /> Clean Price</label>
+                <label><input type="radio" name="basis" value="both" /> Both</label>
+              </div>
+              <span class="note">No Yes/No option — first safe option is used.</span>
+            </div>
+            <div class="form-group">
+              <label>On Duplicate Key</label>
+              <div class="radio-group">
+                <label><input type="radio" name="dupAction" value="delete" /> Delete existing rows</label>
+                <label><input type="radio" name="dupAction" value="keep" /> Keep existing rows</label>
+              </div>
+              <span class="note">Destructive-looking option must not be chosen blindly.</span>
+            </div>
+            <div class="form-group">
+              <label>Disabled Group</label>
+              <div class="radio-group">
+                <label><input type="radio" name="offGroup" value="Yes" disabled /> Yes</label>
+                <label><input type="radio" name="offGroup" value="No" disabled /> No</label>
+              </div>
+              <span class="note">All members disabled — skipped.</span>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- ================= 7/8. Numeric + decimal ================= -->
+        <fieldset>
+          <legend>7 &amp; 8 · Numeric and decimal fields (spec §11, §12)</legend>
+          <div class="grid">
+            <div class="form-group">
+              <label for="kendoInt">Holding Quantity <span class="required">*</span></label>
+              <input id="kendoInt" name="kendoInt" />
+              <span class="note">Kendo NumericTextBox — min 10, max 20, step 2, decimals 0.</span>
+            </div>
+            <div class="form-group">
+              <label for="kendoDec">Coupon Rate <span class="required">*</span></label>
+              <input id="kendoDec" name="kendoDec" />
+              <span class="note">Kendo NumericTextBox — min 0, max 5, decimals 3.</span>
+            </div>
+            <div class="form-group">
+              <label for="kendoLoose">Weighting Factor</label>
+              <input id="kendoLoose" name="kendoLoose" />
+              <span class="note">Kendo NumericTextBox with no constraints at all.</span>
+            </div>
+            <div class="form-group">
+              <label for="nativeInt">Settlement Days</label>
+              <input type="number" id="nativeInt" name="nativeInt" min="1" max="9" step="2" />
+              <span class="note">Native integer with min/max/step.</span>
+            </div>
+            <div class="form-group">
+              <label for="nativeDec">Notional Amount</label>
+              <input type="number" id="nativeDec" name="nativeDec" min="0.5" max="99.5" step="0.01" />
+              <span class="note">Native decimal, 2 dp via step.</span>
+            </div>
+            <div class="form-group">
+              <label for="nativeAny">Spread</label>
+              <input type="number" id="nativeAny" name="nativeAny" step="any" />
+              <span class="note">step="any" — treated as decimal.</span>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- ================= 9. Free-form ================= -->
+        <fieldset>
+          <legend>9 · Free-form, email, url, date/time (spec §13)</legend>
+          <div class="grid">
+            <div class="form-group">
+              <label for="plainText">Portfolio Long Name <span class="required">*</span></label>
+              <input type="text" id="plainText" name="plainText" />
+              <span class="note">Label + random number.</span>
+            </div>
+            <div class="form-group">
+              <label for="shortMax"
+                >Extremely Long Descriptive Label For A Very Small Input Field That Only Accepts Ten
+                Characters</label
+              >
+              <input type="text" id="shortMax" name="shortMax" maxlength="10" />
+              <span class="note">maxlength=10 — value must fit.</span>
+            </div>
+            <div class="form-group">
+              <label for="minLen">Client Code</label>
+              <input type="text" id="minLen" name="minLen" minlength="8" maxlength="20" />
+              <span class="note">minlength=8.</span>
+            </div>
+            <div class="form-group">
+              <label for="notes">Review Notes</label>
+              <textarea id="notes" name="notes" rows="2" maxlength="120"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="email">Contact Email <span class="required">*</span></label>
+              <input type="email" id="email" name="email" />
+              <span class="note">Must be a syntactically valid email, not the label.</span>
+            </div>
+            <div class="form-group">
+              <label for="website">Fund Website</label>
+              <input type="url" id="website" name="website" />
+            </div>
+            <div class="form-group">
+              <label for="phone">Contact Number</label>
+              <input type="tel" id="phone" name="phone" />
+            </div>
+            <div class="form-group">
+              <label for="kendoDate">Valuation Date <span class="required">*</span></label>
+              <input id="kendoDate" name="kendoDate" />
+              <span class="note">Kendo DatePicker (min = 30 days ago, max = today).</span>
+            </div>
+            <div class="form-group">
+              <label for="kendoDateTime">Cut-off</label>
+              <input id="kendoDateTime" name="kendoDateTime" />
+              <span class="note">Kendo DateTimePicker.</span>
+            </div>
+            <div class="form-group">
+              <label for="kendoTime">Pricing Time</label>
+              <input id="kendoTime" name="kendoTime" />
+              <span class="note">Kendo TimePicker.</span>
+            </div>
+            <div class="form-group">
+              <label for="nativeDate">Trade Date</label>
+              <input type="date" id="nativeDate" name="nativeDate" />
+            </div>
+            <div class="form-group">
+              <label for="nativeDateTime">Received At</label>
+              <input type="datetime-local" id="nativeDateTime" name="nativeDateTime" />
+            </div>
+            <div class="form-group">
+              <label for="nativeTime">Deadline</label>
+              <input type="time" id="nativeTime" name="nativeTime" />
+            </div>
+            <div class="form-group">
+              <label for="nativeMonth">Reporting Month</label>
+              <input type="month" id="nativeMonth" name="nativeMonth" />
+            </div>
+            <div class="form-group">
+              <label for="kendoMasked">ISIN Mask</label>
+              <input id="kendoMasked" name="kendoMasked" />
+              <span class="note">Kendo MaskedTextBox — value must satisfy the mask.</span>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- ================= 10. Conditional / dependent ================= -->
+        <fieldset>
+          <legend>10 · Conditional &amp; AJAX-revealed fields (spec §14)</legend>
+          <div class="grid">
+            <div class="form-group">
+              <label for="instrumentType">Instrument Type <span class="required">*</span></label>
+              <select id="instrumentType" name="instrumentType">
+                <option value="">-- Select --</option>
+                <option value="bond">Bond</option>
+                <option value="equity">Equity</option>
+              </select>
+              <span class="note">Reveals level-1 fields after a simulated 600 ms server call.</span>
+            </div>
+          </div>
+          <div id="level1" class="grid" style="margin-top: 12px"></div>
+          <div id="level2" class="grid" style="margin-top: 12px"></div>
+          <div id="ajaxLate" class="grid" style="margin-top: 12px"></div>
+          <p class="note">
+            A further field is injected 1.5 s after page load to mimic a late AJAX render.
+          </p>
+        </fieldset>
+
+        <!-- ================= 11. Safety / skip rules ================= -->
+        <fieldset>
+          <legend>11 · Fields that must be skipped (spec §17)</legend>
+          <div class="grid">
+            <div class="form-group">
+              <label for="hiddenByCss">Hidden By CSS</label>
+              <input type="text" id="hiddenByCss" name="hiddenByCss" style="display: none" />
+              <span class="note">display:none — skipped.</span>
+            </div>
+            <div class="form-group">
+              <label for="disabledText">Disabled Field</label>
+              <input type="text" id="disabledText" name="disabledText" disabled />
+            </div>
+            <div class="form-group">
+              <label for="readonlyText">Readonly Field</label>
+              <input type="text" id="readonlyText" name="readonlyText" readonly value="system generated" />
+            </div>
+            <div class="form-group">
+              <label for="password">Password <span class="required">*</span></label>
+              <input type="password" id="password" name="password" />
+              <span class="note">Never filled, even in Required Only mode.</span>
+            </div>
+            <div class="form-group">
+              <label for="apiKey">API Key</label>
+              <input type="text" id="apiKey" name="apiKey" />
+              <span class="note">Sensitive name — never filled.</span>
+            </div>
+            <div class="form-group">
+              <label for="securityAnswer">Security Answer</label>
+              <input type="text" id="securityAnswer" name="securityAnswer" />
+            </div>
+            <div class="form-group">
+              <label for="upload">Supporting Document</label>
+              <input type="file" id="upload" name="upload" />
+            </div>
+            <input type="hidden" id="hiddenInput" name="hiddenInput" value="do-not-touch" />
+          </div>
+        </fieldset>
+
+        <!-- ================= 12. Same-origin iframe ================= -->
+        <fieldset>
+          <legend>12 · Same-origin iframe (spec §17)</legend>
+          <iframe
+            id="innerFrame"
+            title="Nested form"
+            srcdoc='<!DOCTYPE html><html><body style="font:13px Segoe UI,sans-serif;padding:10px">
+              <p style="margin:0 0 8px"><strong>Fields inside a same-origin iframe</strong></p>
+              <label>Sub Account Name *<br><input type="text" name="subAccountName"></label><br><br>
+              <label>Sub Account Limit<br><input type="number" name="subLimit" min="5" max="50"></label><br><br>
+              <label><input type="checkbox" name="subActive"> Active</label>
+            </body></html>'
+          ></iframe>
+        </fieldset>
+
+        <!-- ================= 13. Kendo markup with no reachable widget API ============= -->
+        <fieldset>
+          <legend>13 · Kendo markup, no widget API (spec §5 fallback)</legend>
+          <p class="note">
+            Hand-written Kendo markup with no widget instance behind it — the situation on
+            pages that keep jQuery/Kendo out of <code>window</code>. The original inputs are
+            <code>display:none</code> behind visible wrappers, so the extension must judge
+            visibility by the wrapper, open the dropdown by clicking it, and write numeric
+            values into the visible input as well as the hidden original.
+          </p>
+          <div class="grid">
+            <div class="form-group">
+              <label for="domPutCall">Put Call (DOM only) <span class="required">*</span></label>
+              <span class="k-widget k-dropdown k-header" id="domPutCall_wrapper" aria-owns="domPutCall_listbox">
+                <span class="k-dropdown-wrap k-state-default">
+                  <span class="k-input">- Select -</span>
+                  <span class="k-select"><span class="k-icon k-i-arrow-60-down"></span></span>
+                </span>
+                <select id="domPutCall" name="domPutCall" style="display: none">
+                  <option value="">- Select -</option>
+                  <option value="P">Put</option>
+                  <option value="C">Call</option>
+                </select>
+              </span>
+            </div>
+            <div class="form-group">
+              <label for="domStrike">Strike (DOM only) <span class="required">*</span></label>
+              <span class="k-widget k-numerictextbox">
+                <span class="k-numeric-wrap k-state-default">
+                  <input class="k-formatted-value k-input" value="0.000000" aria-label="Strike display" />
+                  <input id="domStrike" name="domStrike" class="k-input" value="0.000000" style="display: none" />
+                  <span class="k-select"></span>
+                </span>
+              </span>
+              <span class="note">Shows 0.000000 → 6 decimal places must be inferred.</span>
+            </div>
+            <div class="form-group">
+              <label for="domSwitch">Payoff Relative To Initial Fix (DOM only)</label>
+              <span class="k-switch k-switch-off" id="domSwitch_wrapper" aria-checked="false">
+                <span class="k-switch-container"><span class="k-switch-handle"></span></span>
+                <input type="checkbox" id="domSwitch" name="domSwitch" style="display: none" />
+              </span>
+            </div>
+            <div class="form-group">
+              <label for="domMaturity">Maturity (DOM only) <span class="required">*</span></label>
+              <span class="k-widget k-datepicker">
+                <span class="k-picker-wrap k-state-default">
+                  <input class="k-input" value="07/11/2039" aria-label="Maturity display" />
+                  <input id="domMaturity" name="domMaturity" style="display: none" value="07/11/2039" />
+                  <span class="k-select"></span>
+                </span>
+              </span>
+              <span class="note">Already displays dd/MM/yyyy — the fill must match that format.</span>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- ================= 13b. Kendo Editor / HTML box ============================== -->
+        <fieldset>
+          <legend>13b · Kendo Editor — the “HTML box”</legend>
+          <div class="grid">
+            <div class="form-group">
+              <label for="Objective">Portfolio Objective <span class="required">*</span></label>
+              <div class="k-widget k-editor" id="Objective_wrapper" style="border: 1px solid #c6cede; border-radius: 6px; background: #fff">
+                <ul class="k-editor-toolbar" style="list-style: none; margin: 0; padding: 4px 6px; border-bottom: 1px solid #e3e8f0; font-size: 12px">
+                  <li style="display: inline"><strong>B</strong></li>
+                  <li style="display: inline"><em>I</em></li>
+                  <li style="display: inline"><u>U</u></li>
+                </ul>
+                <div class="k-editor-content" contenteditable="true" id="Objective_body" style="min-height: 70px; padding: 6px 8px"></div>
+                <textarea id="Objective" name="Objective" style="display: none"></textarea>
+              </div>
+              <label class="pull-right note" id="Objective_counter">0/120</label>
+              <span class="note">
+                Inline mode: contenteditable surface + hidden textarea. The 120-character
+                counter limit is respected (the counter counts text, not markup).
+              </span>
+            </div>
+            <div class="form-group">
+              <label for="FundRisks">Fund Risks <span class="required">*</span></label>
+              <div class="k-widget k-editor" id="FundRisks_wrapper" style="border: 1px solid #c6cede; border-radius: 6px; background: #fff">
+                <ul class="k-editor-toolbar" style="list-style: none; margin: 0; padding: 4px 6px; border-bottom: 1px solid #e3e8f0; font-size: 12px">
+                  <li style="display: inline"><strong>B</strong></li>
+                </ul>
+                <iframe
+                  class="k-editor-content"
+                  id="FundRisks_frame"
+                  title="Fund Risks editor"
+                  style="width: 100%; height: 80px; border: 0; display: block"
+                  srcdoc="<html><body contenteditable='true' style='font:13px Segoe UI,sans-serif;margin:6px'></body></html>"
+                ></iframe>
+                <textarea id="FundRisks" name="FundRisks" style="display: none"></textarea>
+              </div>
+              <span class="note">
+                Classic mode: the editing surface is an iframe body. Both it and the hidden
+                textarea must end up with the value.
+              </span>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- ================= 14. Application shell must be ignored ===================== -->
+        <fieldset>
+          <legend>14 · Navigation shell — must never be filled</legend>
+          <nav class="navbar" style="display: flex; gap: 12px; align-items: center; padding: 8px; background: #eef2f8; border-radius: 6px">
+            <strong style="font-size: 12px">Nav bar</strong>
+            <input type="text" id="navSearch" name="navSearch" placeholder="Search..." />
+            <select id="navCompany" name="navCompany">
+              <option value="">-- Select company --</option>
+              <option value="1">Acme Capital</option>
+            </select>
+            <label><input type="checkbox" id="navPin" name="navPin" /> Pin menu</label>
+          </nav>
+          <aside class="sidebar" style="margin-top: 10px; padding: 8px; background: #eef2f8; border-radius: 6px">
+            <strong style="font-size: 12px">Sidebar</strong>
+            <label for="sideFilter">Quick Filter</label>
+            <input type="text" id="sideFilter" name="sideFilter" />
+          </aside>
+          <div style="margin-top: 10px">
+            <label for="gridSearch">Grid search box (page content, still a filter)</label>
+            <input type="text" id="gridSearch" name="gridSearch" />
+          </div>
+          <div style="margin-top: 10px">
+            <label for="FilterName">Filter Name (a real field — must still be filled)</label>
+            <input type="text" id="FilterName" name="FilterName" />
+          </div>
+          <p class="note">
+            Everything inside the nav bar and sidebar, plus search/filter boxes, is skipped and
+            not even counted as detected. A genuine field merely <em>named</em> “Filter Name”
+            is still filled.
+          </p>
+        </fieldset>
+
+        <div class="actions">
+          <button type="submit" id="saveBtn">Save</button>
+          <button type="reset" id="resetBtn">Reset</button>
+          <button type="button" id="addFieldBtn">Simulate late AJAX field</button>
+        </div>
+      </form>
+    </main>
+
+    <script>
+      (function () {
+        var hasKendo = !!(window.jQuery && window.kendo);
+        document.getElementById('status').textContent = hasKendo
+          ? 'Kendo UI ' + kendo.version + ' loaded — real widget APIs are being tested.'
+          : 'Kendo UI could not load here (extension CSP or offline). Native controls and fallback paths are still fully testable.';
+
+        /* Never let this page submit — spec §27 requires proving the extension does not. */
+        var form = document.getElementById('demoForm');
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          document.getElementById('submitAlarm').style.display = 'block';
+          console.warn('[demo] submit event fired');
+        });
+
+        /* ---------------- conditional / AJAX-driven fields ---------------- */
+        function field(html) {
+          var d = document.createElement('div');
+          d.className = 'form-group';
+          d.innerHTML = html;
+          return d;
+        }
+
+        var level1 = document.getElementById('level1');
+        var level2 = document.getElementById('level2');
+
+        document.getElementById('instrumentType').addEventListener('change', function () {
+          level1.innerHTML = '';
+          level2.innerHTML = '';
+          var type = this.value;
+          if (!type) return;
+          setTimeout(function () {
+            // Level 1: appears only after the parent changed (simulated server round trip).
+            level1.appendChild(
+              field(
+                '<label for="issuerName">Issuer Name <span class="required">*</span></label>' +
+                  '<input type="text" id="issuerName" name="issuerName">' +
+                  '<span class="note">Revealed by Instrument Type.</span>'
+              )
+            );
+            level1.appendChild(
+              field(
+                '<label for="creditRating">Credit Rating <span class="required">*</span></label>' +
+                  '<select id="creditRating" name="creditRating">' +
+                  '<option value="">-- Select --</option><option value="aaa">AAA</option>' +
+                  '<option value="bbb">BBB</option></select>' +
+                  '<span class="note">Selecting this reveals a second level.</span>'
+              )
+            );
+            if (type === 'bond') {
+              level1.appendChild(
+                field(
+                  '<label for="maturity">Maturity Years</label>' +
+                    '<input type="number" id="maturity" name="maturity" min="1" max="30">'
+                )
+              );
+            }
+            document.getElementById('creditRating').addEventListener('change', function () {
+              level2.innerHTML = '';
+              if (!this.value) return;
+              setTimeout(function () {
+                level2.appendChild(
+                  field(
+                    '<label for="watchList">On Watch List <span class="required">*</span></label>' +
+                      '<div class="radio-group">' +
+                      '<label><input type="radio" name="watchList" value="Yes"> Yes</label>' +
+                      '<label><input type="radio" name="watchList" value="No"> No</label></div>' +
+                      '<span class="note">Level 2 — revealed by Credit Rating.</span>'
+                  )
+                );
+                level2.appendChild(
+                  field(
+                    '<label for="reviewDate">Review Date <span class="required">*</span></label>' +
+                      '<input type="date" id="reviewDate" name="reviewDate">'
+                  )
+                );
+              }, 500);
+            });
+          }, 600);
+        });
+
+        /* Section 13: stand-in for Kendo's popup behaviour, so the DOM-only fallback can be
+           exercised even when the real Kendo library is unavailable. */
+        (function () {
+          var wrap = document.getElementById('domPutCall_wrapper');
+          var list = document.createElement('div');
+          list.className = 'k-animation-container';
+          list.style.display = 'none';
+          list.style.position = 'absolute';
+          list.style.zIndex = '9999';
+          list.innerHTML =
+            '<div class="k-list-container k-popup" style="background:#fff;border:1px solid #c6cede;' +
+            'border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.12)">' +
+            '<ul id="domPutCall_listbox" class="k-list" style="list-style:none;margin:0;padding:4px">' +
+            '<li class="k-item k-list-optionlabel" style="padding:4px 10px">- Select -</li>' +
+            '<li class="k-item k-state-disabled k-disabled" style="padding:4px 10px;opacity:.5">Unavailable</li>' +
+            '<li class="k-item" data-value="P" style="padding:4px 10px;cursor:pointer">Put</li>' +
+            '<li class="k-item" data-value="C" style="padding:4px 10px;cursor:pointer">Call</li>' +
+            '</ul></div>';
+          document.body.appendChild(list);
+
+          wrap.addEventListener('mousedown', function () {
+            var box = wrap.getBoundingClientRect();
+            list.style.left = box.left + window.scrollX + 'px';
+            list.style.top = box.bottom + window.scrollY + 'px';
+            list.style.display = list.style.display === 'none' ? 'block' : 'none';
+          });
+          list.querySelectorAll('li.k-item').forEach(function (li) {
+            li.addEventListener('click', function () {
+              if (li.classList.contains('k-disabled') || li.classList.contains('k-list-optionlabel')) return;
+              wrap.querySelector('.k-input').textContent = li.textContent;
+              var sel = document.getElementById('domPutCall');
+              sel.value = li.getAttribute('data-value');
+              sel.dispatchEvent(new Event('change', { bubbles: true }));
+              list.style.display = 'none';
+            });
+          });
+
+          // Kendo copies the visible formatted value into the hidden original on change.
+          var visStrike = document.querySelector('.k-numerictextbox .k-formatted-value');
+          if (visStrike) {
+            visStrike.addEventListener('change', function () {
+              document.getElementById('domStrike').value = visStrike.value;
+            });
+          }
+          // The switch reflects its checkbox state.
+          var sw = document.getElementById('domSwitch');
+          var swWrap = document.getElementById('domSwitch_wrapper');
+          swWrap.addEventListener('mousedown', function () { sw.checked = !sw.checked; sw.dispatchEvent(new Event('change', { bubbles: true })); });
+          sw.addEventListener('change', function () {
+            swWrap.classList.toggle('k-switch-on', sw.checked);
+            swWrap.classList.toggle('k-switch-off', !sw.checked);
+            swWrap.setAttribute('aria-checked', String(sw.checked));
+          });
+        })();
+
+        var lateCount = 0;
+        function addLateField() {
+          lateCount++;
+          document
+            .getElementById('ajaxLate')
+            .appendChild(
+              field(
+                '<label for="lateField' + lateCount + '">Late Loaded Field ' + lateCount +
+                  ' <span class="required">*</span></label>' +
+                  '<input type="text" id="lateField' + lateCount + '" name="lateField' + lateCount + '">' +
+                  '<span class="note">Added after page load.</span>'
+              )
+            );
+        }
+        setTimeout(addLateField, 1500);
+        document.getElementById('addFieldBtn').addEventListener('click', addLateField);
+
+        if (!hasKendo) return;
+
+        /* ---------------- real Kendo widgets ---------------- */
+        var currencies = [
+          { text: 'Select currency', value: '' }, // placeholder inside the data — must be skipped
+          { text: 'GBP', value: 'GBP' },
+          { text: 'USD', value: 'USD' },
+          { text: 'EUR', value: 'EUR' }
+        ];
+
+        $('#kendoDdl').kendoDropDownList({
+          optionLabel: '-- Select --',
+          dataTextField: 'text',
+          dataValueField: 'value',
+          dataSource: currencies
+        });
+
+        $('#kendoCombo').kendoComboBox({
+          placeholder: 'Select...',
+          dataTextField: 'text',
+          dataValueField: 'value',
+          dataSource: [
+            { text: 'Barclays', value: '1' },
+            { text: 'HSBC', value: '2' }
+          ]
+        });
+
+        $('#emptyDdl').kendoDropDownList({
+          optionLabel: '-- Select --',
+          dataTextField: 'text',
+          dataValueField: 'value',
+          dataSource: []
+        });
+
+        $('#parentDdl').kendoDropDownList({
+          optionLabel: '-- Select asset class --',
+          dataTextField: 'text',
+          dataValueField: 'value',
+          dataSource: [
+            { text: 'Fixed Income', value: 'fi' },
+            { text: 'Equities', value: 'eq' }
+          ]
+        });
+
+        $('#childDdl').kendoDropDownList({
+          autoBind: false,
+          optionLabel: '-- Select instrument --',
+          cascadeFrom: 'parentDdl',
+          dataTextField: 'text',
+          dataValueField: 'value',
+          dataSource: {
+            data: [
+              { text: 'UK Gilt 2030', value: 'g30', parent: 'fi' },
+              { text: 'US Treasury 2032', value: 't32', parent: 'fi' },
+              { text: 'Vodafone Plc', value: 'vod', parent: 'eq' }
+            ],
+            filter: { field: 'parent', operator: 'eq', value: '' }
+          },
+          cascadeFromField: 'parent'
+        });
+
+        $('#bookTree').kendoTreeView({
+          dataSource: [
+            { text: 'Archived (disabled)', enabled: false },
+            {
+              text: 'Trading Books',
+              expanded: true,
+              items: [{ text: 'Book A — Rates' }, { text: 'Book B — Credit' }]
+            }
+          ]
+        });
+
+        $('#kendoSwitch').kendoSwitch({ messages: { checked: 'Yes', unchecked: 'No' } });
+
+        $('#kendoInt').kendoNumericTextBox({ min: 10, max: 20, step: 2, decimals: 0, format: 'n0' });
+        $('#kendoDec').kendoNumericTextBox({ min: 0, max: 5, decimals: 3, step: 0.001, format: 'n3' });
+        $('#kendoLoose').kendoNumericTextBox({});
+
+        var today = new Date();
+        var monthAgo = new Date(today.getTime() - 30 * 864e5);
+        $('#kendoDate').kendoDatePicker({ min: monthAgo, max: today, format: 'dd/MM/yyyy' });
+        $('#kendoDateTime').kendoDateTimePicker({});
+        $('#kendoTime').kendoTimePicker({});
+        $('#kendoMasked').kendoMaskedTextBox({ mask: 'LL0000000000' });
+      })();
+    </script>
+  </body>
+</html>

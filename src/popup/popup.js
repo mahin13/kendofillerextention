@@ -19,6 +19,9 @@
     'conditional'
   ];
 
+  /* Light is the default; 'system' follows the OS through a prefers-color-scheme rule. */
+  const THEMES = ['light', 'dark', 'system'];
+
   const el = (id) => document.getElementById(id);
   let config = null;
   let busy = false;
@@ -53,6 +56,56 @@
     target[last] = value;
   }
 
+  /**
+   * Paint the chosen theme and keep the segmented control in step.
+   *
+   * The value is mirrored into localStorage because popup.html reads it synchronously on the
+   * first line of the document: the real config lives in chrome.storage, which can only be
+   * read asynchronously, and without the mirror a light-theme user would see a dark flash
+   * every time the popup opens.
+   */
+  function applyTheme(theme) {
+    const t = THEMES.indexOf(theme) === -1 ? THEMES[0] : theme;
+    document.documentElement.dataset.theme = t;
+    try {
+      localStorage.setItem('kfTheme', t);
+    } catch (e) {
+      /* private mode / storage disabled: the theme simply is not remembered early */
+    }
+    document.querySelectorAll('[data-theme-choice]').forEach((btn) => {
+      const on = btn.getAttribute('data-theme-choice') === t;
+      btn.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+  }
+
+  /** Home <-> Settings. Everything configurable lives behind the Settings button. */
+  function showSettings(on) {
+    el('settingsView').hidden = !on;
+    el('homeView').hidden = !!on;
+    el('settingsBtn').setAttribute('aria-expanded', on ? 'true' : 'false');
+    el('settingsBtnText').textContent = on ? 'Done' : 'Settings';
+    const scroller = document.querySelector('main');
+    if (scroller) scroller.scrollTop = 0;
+  }
+
+  /** The home view states what the next run will do, so Settings stays out of the way. */
+  function renderSummary() {
+    el('summaryMode').textContent =
+      config.mode === 'required' ? 'Required fields only' : 'All supported fields';
+
+    const off = CATEGORIES.filter((c) => !(config.categories[c] && config.categories[c].enabled));
+    el('summaryCats').textContent = off.length
+      ? CATEGORIES.length - off.length + ' of ' + CATEGORIES.length + ' categories on — off: ' + off.join(', ')
+      : 'All ' + CATEGORIES.length + ' control categories on';
+
+    const themeLabel = { light: 'Light theme', dark: 'Dark theme', system: 'Auto theme' };
+    el('summaryFlags').textContent = [
+      config.onlyEmpty ? 'Only empty fields' : 'Every eligible field',
+      config.highlight ? 'filled fields highlighted' : 'no highlighting',
+      themeLabel[config.theme] || themeLabel.light
+    ].join(' • ');
+  }
+
   function render() {
     el('mode').value = config.mode || 'all';
     el('modeHint').textContent =
@@ -77,6 +130,9 @@
 
     el('onlyEmpty').checked = !!config.onlyEmpty;
     el('highlight').checked = !!config.highlight;
+
+    applyTheme(config.theme);
+    renderSummary();
   }
 
   const persist = (function () {
@@ -101,6 +157,7 @@
         config.categories[cat].enabled = box.checked;
         const row = box.closest('.kf-row');
         if (row) row.classList.toggle('kf-off', !box.checked);
+        renderSummary();
         persist();
       });
     });
@@ -130,10 +187,12 @@
 
     el('onlyEmpty').addEventListener('change', (e) => {
       config.onlyEmpty = e.target.checked;
+      renderSummary();
       persist();
     });
     el('highlight').addEventListener('change', (e) => {
       config.highlight = e.target.checked;
+      renderSummary();
       persist();
     });
 
@@ -146,7 +205,21 @@
       }
     });
 
-    el('demo').addEventListener('click', () => sw('openDemo'));
+    document.querySelectorAll('[data-theme-choice]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        config.theme = btn.getAttribute('data-theme-choice');
+        applyTheme(config.theme);
+        renderSummary();
+        persist();
+      });
+    });
+
+    el('settingsBtn').addEventListener('click', () => {
+      showSettings(el('settingsView').hidden);
+    });
+    el('openSettings').addEventListener('click', () => showSettings(true));
+    el('closeSettings').addEventListener('click', () => showSettings(false));
+
     el('autofill').addEventListener('click', runAutofill);
     el('scan').addEventListener('click', runScan);
     el('toggleDiag').addEventListener('click', () => {
@@ -346,6 +419,8 @@
     const stored = await sw('getConfig');
     config = (stored.ok && stored.config) || {};
     config.categories = config.categories || {};
+    if (THEMES.indexOf(config.theme) === -1) config.theme = THEMES[0];
+    showSettings(false);
     render();
     wireInputs();
 

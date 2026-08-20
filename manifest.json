@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Kendo Filler",
-  "version": "1.4.0",
+  "version": "1.6.0",
   "description": "Detects Kendo UI and native form controls on the current page and fills them with valid test data instantly.",
   "minimum_chrome_version": "111",
   "permissions": ["activeTab", "scripting", "storage"],

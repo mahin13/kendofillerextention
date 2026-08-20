@@ -25,14 +25,22 @@ To test on pages opened from disk (`file://…`), open `chrome://extensions` →
 ## Use
 
 1. Open the form you want to fill.
-2. Click the Kendo Filler icon. The popup pre-scans the page and shows how many supported
-   fields (and how many required ones) it found, plus whether Kendo UI was detected.
-3. Choose **All Fields** or **Required Fields Only**, switch the control categories on/off,
-   set the Yes/No defaults and numeric ranges.
-4. Click **AUTOFILL**. The result line reports
+2. Click the Kendo Filler icon. The popup opens on its home view: the scope of the run, a
+   one-card summary of what the next run will do, and the large **AUTOFILL** button pinned to
+   the bottom so it is always in reach.
+3. Click **AUTOFILL**. The result line reports
    `Detected 24 fields • Filled 22 • Skipped 2`, and **Show diagnostics** lists every field
    with the value it received or the reason it was skipped or failed.
-5. **Scan** counts supported fields without changing anything.
+4. **Scan** counts supported fields without changing anything.
+5. Everything configurable lives behind the **Settings** button in the header:
+   * **Appearance** — Light, Dark or Auto (Auto follows the operating system). The choice is
+     stored with the rest of the configuration and applied before the popup's first paint, so
+     it never flashes the wrong theme.
+   * **Fill mode** — All Fields or Required Fields Only.
+   * **Control categories** — one card per category (dropdowns, TreeView, checkboxes,
+     toggles, radios, numeric, decimal, free-form, conditional) with its switch and its
+     options: Checked/Unchecked, Yes/No defaults, numeric and decimal ranges, decimal places.
+   * **Fill only empty fields** / **Highlight filled fields**, and **Reset configuration**.
 
 Kendo Filler never clicks Save/Submit, never navigates, and never calls your application's
 APIs itself.
@@ -44,6 +52,7 @@ APIs itself.
 | Category | Behaviour |
 | --- | --- |
 | Kendo DropDownList / ComboBox / DropDownTree / native `select` | Selects the first valid selectable record; placeholders (`Select…`, `-- Select --`, blanks) and disabled options are ignored; retries the next record if validation rejects the first |
+| Dropdowns **with a search box** (filterable / `serverFiltering`) | Handled explicitly: a search result left in `dataSource.view()` no longer reads as "no records", and a list that loads nothing until something is typed is searched — through `widget.search()`, or by typing into the popup's search box when the widget API is out of reach |
 | Kendo TreeView | Selects the first genuinely selectable node in DOM order (disabled and structural nodes skipped) |
 | Checkbox | Set to Checked / Unchecked (configurable); never toggled if already in the wanted state |
 | Toggle / Switch (Kendo Switch, ARIA switch) | Configurable default: **Yes** or **No** |
@@ -142,7 +151,8 @@ as a last resort (and reported as such in the diagnostics).
 kendo-filler/
   manifest.json                      Manifest V3, permissions: activeTab, scripting, storage
   src/
-    popup/     popup.html|css|js     Configuration UI, Autofill button, diagnostics
+    popup/     popup.html|css|js     Home view + Settings view, Autofill, diagnostics
+               theme-boot.js         Stamps Light/Dark/Auto before the first paint
     options/   options.html|js       Advanced settings (max passes, time budget)
     background/service-worker.js     Lifecycle, on-demand injection, storage, messaging
     content/
@@ -150,7 +160,8 @@ kendo-filler/
       utils.js                       Visibility, labels, logical ids, iframes, validation state
       required-detector.js           The '*' / metadata rules
       value-generator.js             All generated values (crypto-backed)
-      kendo-adapter.js               Kendo widget APIs (dropdown, tree, numeric, switch, date)
+      kendo-adapter.js               Kendo widget APIs (dropdown incl. search box, tree,
+                                     numeric, switch, date)
       native-adapter.js              Framework-safe native DOM fallback
       classifier.js                  Normalised field model + safety rules
       scanner.js                     Detection, widget de-duplication, radio grouping
@@ -185,6 +196,19 @@ to any site** and needs no host permissions.
 * `widget.select(index)` is popup-index based: with an `optionLabel` configured, index 0 is
   the placeholder — so records are selected by data-item value, with index selection only
   as a fallback.
+* A **filterable** DropDownList keeps its search result in `dataSource.view()`, so after any
+  search — including one a user left behind — `view()` can be empty while every record is
+  still in `data()`. Reading only `view()` reported a dropdown that visibly had records as
+  "Dropdown has no selectable options"; the adapter now falls back to `data()`.
+* A `serverFiltering` list with `minLength` loads **nothing** on open — only what is typed.
+  Opening it is not enough, so the adapter drives `widget.search()` (Kendo's own entry point
+  for the search box) with an empty term first, then a few common letters, and picks from the
+  result. Without the widget API it types into the popup's `.k-list-filter` / `.k-searchbox`
+  input instead. That search box is still never treated as a form field.
+* A Kendo widget can be built on `<input type="hidden">` (MVC `DropDownListFor`, cascading and
+  searchable pickers). The widget is on screen, so the field is filled instead of being
+  reported "Field is hidden" — `utils.isKendoOriginal()` requires visible Kendo chrome, so
+  antiforgery tokens and row ids stay skipped.
 * A remote-bound DropDownList has an empty dataSource until first opened; the adapter opens
   the widget (exactly what a user does), waits for `dataBound`, then closes it.
 * Kendo hides the original input behind a wrapper, so visibility/disabled/readonly tests
@@ -228,6 +252,12 @@ controls that is where all the time goes, so the session is adaptive instead:
 * dropdowns are opened only when their list is genuinely not loaded yet (`autoBind:false`,
   `serverFiltering`, cascade child, remote transport) — an already-populated list is selected
   from directly, with no popup flicker;
+* the waits around a selection are polled, not fixed: the popup is tested before each 25 ms
+  tick instead of after a flat 70 ms, the confirmation after a click polls for up to 320 ms
+  and leaves as soon as the widget's face changes, and the post-selection validation check
+  looks immediately and then once more 30 ms later instead of always waiting 80 ms. A
+  searchable list also gets only ~700 ms to load on open before the adapter starts typing,
+  rather than sitting out the full remote-read budget it was never going to use;
 * visibility uses `Element.checkVisibility()` — one native call instead of walking every
   ancestor with `getComputedStyle`, which was the scanner's biggest cost;
 * fields are re-classified before filling only if the DOM has mutated since the scan;
@@ -242,7 +272,8 @@ round trips): the 27-field form went from 5.5 s to ~2.5 s, and the Kendo-markup 
 
 ## Test page
 
-The popup's **Open demo page** opens `demo/demo.html`, which contains every supported
+`demo/demo.html` (open it directly — the popup deliberately has no page-opening action)
+contains every supported
 control type: required-marker variants (plus a footnote asterisk that must be ignored),
 cascading dropdowns, an empty-datasource dropdown, a TreeView with a disabled first node,
 checkbox/switch/radio variants (including a group with no Yes/No and one with a destructive

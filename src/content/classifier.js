@@ -152,7 +152,10 @@
       if (tag === 'input' && ['submit', 'reset', 'button', 'image', 'file'].indexOf(type) !== -1) {
         return type + ' control is never filled';
       }
-      if (type === 'hidden') return 'hidden input';
+      // A Kendo widget can be built ON a hidden input (MVC DropDownListFor, cascading and
+      // searchable pickers). The widget is visible, so that is a real field — see
+      // utils.isKendoOriginal(). Tokens and row ids have no Kendo chrome and stay skipped.
+      if (type === 'hidden' && !U.isKendoOriginal(el)) return 'hidden input';
       if (el.closest && el.closest(CHROME_CONTAINERS)) return 'widget chrome, not a form field';
       // Navigation shell: sidebar, navbar, header, breadcrumbs, tab strip, settings panels.
       // `data-kf-fill` is the escape hatch for a real form that genuinely lives in one.

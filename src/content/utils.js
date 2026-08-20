@@ -69,11 +69,32 @@
      */
     isVisible(el) {
       if (!el || !el.isConnected) return false;
-      if (el.type === 'hidden') return false;
+      if (el.type === 'hidden' && !this.isKendoOriginal(el)) return false;
       if (el.hasAttribute && el.hasAttribute('hidden')) return false;
       if (this.isRendered(el)) return true;
       const face = this.fieldFace(el);
       return face && face !== el ? this.isRendered(face) : false;
+    },
+
+    /**
+     * Is this element the storage element of a Kendo widget that IS on screen?
+     *
+     * Kendo builds several widgets on an input it then takes out of the layout — and in
+     * places (MVC's DropDownListFor, cascading / searchable pickers) that input is
+     * `type="hidden"`. The widget the tester sees and uses is right there, so rejecting the
+     * field for being "hidden" skips a control that is plainly fillable. A genuinely hidden
+     * input — antiforgery token, row id — carries no Kendo chrome and stays skipped.
+     */
+    isKendoOriginal(el) {
+      if (!el || el.nodeType !== 1) return false;
+      const wrapper = this.kendoWrapper(el);
+      if (wrapper && wrapper !== el && this.isRendered(wrapper)) return true;
+      // Kendo may not have run yet (data-role markup awaiting kendo.init): treat it as a
+      // field only when a visible Kendo face already exists for it.
+      const role = el.getAttribute && el.getAttribute('data-role');
+      if (!role) return false;
+      const face = this.fieldFace(el);
+      return !!(face && face !== el && this.isRendered(face));
     },
 
     /**

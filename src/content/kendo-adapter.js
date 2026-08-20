@@ -184,7 +184,12 @@
       try {
         const ds = widget.dataSource;
         if (!ds) return [];
-        view = (ds.view && ds.view()) || ds.data() || [];
+        view = (ds.view && ds.view()) || [];
+        /* A filterable ("dropdown with search") widget keeps the SEARCH RESULT in view():
+         * after any search — including one the user left behind — view() can be empty while
+         * every record is still in data(). Reading only view() is what made a dropdown that
+         * visibly has records report "no selectable options", so fall back to data(). */
+        if (!view.length && typeof ds.data === 'function') view = ds.data() || [];
         view = view.toJSON ? view.slice(0) : Array.prototype.slice.call(view);
       } catch (e) {
         return [];
@@ -268,8 +273,11 @@
      *
      * @returns {Promise<boolean>} true when the list has at least one record
      */
-    async openAndWait(widget, waitMs) {
+    async openAndWait(widget, waitMs, opts) {
+      const o = opts || {};
       const timeout = waitMs || 4000;
+      // Records already loaded: opening is pure flicker and pure delay.
+      if (!o.force && this.dataItems(widget).length) return true;
       if (typeof widget.open !== 'function') return this.dataItems(widget).length > 0;
 
       let bound = false;
@@ -285,14 +293,22 @@
       }
 
       const start = Date.now();
+      /* A searchable list frequently loads NOTHING on open (serverFiltering + minLength),
+       * so waiting out the full remote-read budget only to then type is dead time. */
+      const openBudget = this.isFilterable(widget) ? Math.min(700, timeout) : timeout;
       // Leave as soon as records are available; only a remote read costs real time.
-      while (Date.now() - start < timeout) {
+      while (Date.now() - start < openBudget) {
         if (this.dataItems(widget).length) break;
-        await U.sleep(60);
+        await U.sleep(20);
         if (bound && this.dataItems(widget).length) break;
       }
-      // Let the popup finish rendering before we select, then put the UI back as we found it.
-      await U.sleep(40);
+      // Still nothing and the widget has a search box: it is one of the lists that loads
+      // only what is typed. So type, the way a tester does.
+      if (!this.dataItems(widget).length && this.isFilterable(widget)) {
+        await this.searchForRecords(widget, Math.max(800, timeout - (Date.now() - start)));
+      }
+      // Only the DOM path needs the popup painted; the API path reads the dataSource.
+      if (o.render) await U.sleep(30);
       try {
         if (typeof widget.close === 'function') widget.close();
       } catch (e) {
@@ -305,6 +321,71 @@
     async ensureData(widget, waitMs) {
       if (this.dataItems(widget).length) return true;
       return await this.openAndWait(widget, waitMs);
+    },
+
+    /* ------------------------------------------------------------------ *
+     * Dropdowns WITH A SEARCH BOX
+     * ------------------------------------------------------------------ *
+     * Two different problems both look like "the dropdown is empty":
+     *  - a stale filter leaves dataSource.view() empty (handled in dataItems())
+     *  - a serverFiltering list with minLength loads NOTHING until something is typed, so
+     *    opening it is not enough.
+     * widget.search() is Kendo's own entry point for the search box, so driving it keeps us
+     * inside the widget's normal behaviour instead of calling the application's API.
+     */
+
+    /** Does this widget show a search / filter box? */
+    isFilterable(widget) {
+      const o = (widget && widget.options) || {};
+      if (o.filter && String(o.filter).toLowerCase() !== 'none') return true;
+      if (o.serverFiltering === true) return true;
+      try {
+        if (widget && widget.filterInput && widget.filterInput.length) return true;
+      } catch (e) {
+        /* ignore */
+      }
+      return false;
+    },
+
+    /** The search box of a filterable widget, whether Kendo exposes it or not. */
+    filterInputOf(widget) {
+      try {
+        if (widget && widget.filterInput && widget.filterInput[0]) return widget.filterInput[0];
+      } catch (e) {
+        /* ignore */
+      }
+      const el = widget && widget.element && widget.element[0];
+      const wrapper = (widget && widget.wrapper && widget.wrapper[0]) || (el ? U.kendoWrapper(el) : null);
+      return el ? this.domFilterInput(el, wrapper) : null;
+    },
+
+    /**
+     * Ask the search box for records: first with an empty term (which also clears a filter
+     * somebody else left behind), then with a few common letters and digits.
+     * @returns {Promise<boolean>} true when records arrived
+     */
+    async searchForRecords(widget, waitMs) {
+      const probes = ['', 'a', 'e', 'o', 'i', 's', '1'];
+      const budget = waitMs || 2400;
+      const per = Math.max(160, Math.round(budget / probes.length));
+      const canSearch = typeof widget.search === 'function';
+      const input = canSearch ? null : this.filterInputOf(widget);
+      if (!canSearch && !input) return false;
+
+      for (const probe of probes) {
+        try {
+          if (canSearch) widget.search(probe);
+          else if (KF.native) KF.native.setValue(input, probe, { keyboard: true, blur: false });
+        } catch (e) {
+          continue;
+        }
+        const start = Date.now();
+        while (Date.now() - start < per) {
+          if (this.dataItems(widget).length) return true;
+          await U.sleep(25);
+        }
+      }
+      return this.dataItems(widget).length > 0;
     },
 
     /**
@@ -323,19 +404,28 @@
        * and flicker, so it is skipped unless `alwaysOpen` is set. */
       if (skipCount === 0 && o.openFirst !== false) {
         if (o.alwaysOpen || !this.dataItems(widget).length) {
-          await this.openAndWait(widget);
+          await this.openAndWait(widget, 0, { force: !!o.alwaysOpen });
         }
       }
 
       let items = this.dataItems(widget);
       if (!items.length) {
-        const got = await this.ensureData(widget);
-        if (!got) return { ok: false, reason: 'Dropdown has no selectable options' };
+        await this.ensureData(widget);
         items = this.dataItems(widget);
       }
 
       const candidates = items.filter((it) => this.isSelectableItem(widget, it));
-      if (!candidates.length) return { ok: false, reason: 'Dropdown has no selectable options' };
+      if (!candidates.length) {
+        /* The dataSource can look empty while the popup is showing records — a widget with a
+         * search box bound to a custom source, or a list built from a template. What the
+         * tester can see and click, we can click too. */
+        const own = widget.element && widget.element[0];
+        if (own) {
+          const dom = await this.domSelectFirst(own, skipCount);
+          if (dom.ok) return dom;
+        }
+        return { ok: false, reason: 'Dropdown has no selectable options' };
+      }
       if (skipCount >= candidates.length) return { ok: false, reason: 'No further selectable options to try' };
 
       const item = candidates[skipCount];
@@ -666,6 +756,8 @@
         if (li.getAttribute('aria-disabled') === 'true') return false;
         if (li.classList.contains('k-group-header') || li.classList.contains('k-list-group-item')) return false;
         if (li.classList.contains('k-list-optionlabel')) return false; // the placeholder row
+        // "No data found" template, and anything that belongs to the search box itself.
+        if (li.closest('.k-nodata, .k-no-data, .k-list-filter, .k-searchbox')) return false;
         const text = U.text(li);
         if (!text || U.isPlaceholderText(text)) return false;
         return true;
@@ -681,6 +773,57 @@
         return U.text(face);
       }
       return U.text(wrapper);
+    },
+
+    /**
+     * The search box of a "dropdown with search", found from markup alone.
+     *
+     * Kendo renders it inside the popup (.k-list-filter / .k-searchbox in newer themes, a
+     * bare .k-textbox in the older ones); a ComboBox instead uses its own visible input.
+     * It is deliberately NOT treated as a form field elsewhere (classifier: widget chrome) —
+     * here we type into it on purpose, because that is the only way some lists ever load.
+     */
+    domFilterInput(el, wrapper) {
+      const usable = (i) => {
+        if (!i || i.tagName !== 'INPUT') return false;
+        if (i.type === 'hidden' || i.readOnly || i.disabled) return false;
+        return U.isRendered(i);
+      };
+      const pick = (root) => {
+        if (!root) return null;
+        const inputs = root.querySelectorAll(
+          '.k-list-filter input, .k-searchbox input, input.k-textbox, input[type="search"], input[type="text"], input:not([type])'
+        );
+        for (const i of inputs) {
+          if (usable(i)) return i;
+        }
+        return null;
+      };
+      const list = this.findPopupList(el, wrapper);
+      return pick(list) || pick(wrapper);
+    },
+
+    /**
+     * A searchable list can be empty until something is typed (serverFiltering + minLength).
+     * Try a few characters and take whatever the list comes back with.
+     * @returns {Promise<Element[]>} popup records, empty when the search found nothing
+     */
+    async domSearchForItems(el, wrapper, list) {
+      const input = this.domFilterInput(el, wrapper);
+      if (!input) return [];
+      const N = KF.native;
+      if (!N) return [];
+      for (const probe of ['a', 'e', 'o', 's', '1']) {
+        // No blur: blurring would close the popup we are reading from.
+        N.setValue(input, probe, { keyboard: true, blur: false, change: false });
+        const start = Date.now();
+        while (Date.now() - start < 700) {
+          await U.sleep(35);
+          const found = this.popupItems(this.findPopupList(el, wrapper) || list);
+          if (found.length) return found;
+        }
+      }
+      return [];
     },
 
     /**
@@ -700,18 +843,31 @@
 
       this.pressElement(opener);
 
-      // Wait for the popup to render.
+      /* Wait for the popup to render — testing BEFORE each sleep, so a local list (the
+       * common case) costs one tick instead of a fixed 70ms. */
       let list = null;
+      let items = [];
+      let grace = 700;
       const start = Date.now();
       while (Date.now() - start < 3000) {
-        await U.sleep(70);
         list = this.findPopupList(el, wrapper);
-        if (list && this.popupItems(list).length) break;
+        items = this.popupItems(list);
+        if (items.length) break;
+        if (list) {
+          // A popup with a search box is entitled to show nothing yet — stop waiting for
+          // records that will only arrive once something is typed.
+          if (grace === 700 && this.domFilterInput(el, wrapper)) grace = 150;
+          if (Date.now() - start > grace) break;
+        }
+        await U.sleep(25);
       }
       if (!list) {
         return { ok: false, reason: 'Dropdown did not open (no popup list found)' };
       }
-      const items = this.popupItems(list);
+      if (!items.length) {
+        // A dropdown with a search box may hold nothing until a term is typed.
+        items = await this.domSearchForItems(el, wrapper, list);
+      }
       if (!items.length) {
         this.pressElement(opener); // close again
         return { ok: false, reason: 'Dropdown has no selectable options' };
@@ -724,10 +880,20 @@
       const item = items[skipCount];
       const text = U.text(item);
       this.pressElement(item);
-      await U.sleep(120);
 
-      // Confirm the widget actually took the value.
-      const after = this.displayedText(wrapper);
+      // Confirm the widget actually took the value — poll briefly instead of a flat wait.
+      let after = '';
+      const clicked = Date.now();
+      while (Date.now() - clicked < 320) {
+        after = this.displayedText(wrapper);
+        if (after && after !== before) break;
+        await U.sleep(25);
+      }
+      /* Leave the page as we found it: a popup still standing (some searchable lists keep
+       * theirs open after a click) would sit over the next field and confuse its lookup. */
+      const stillOpen = this.findPopupList(el, wrapper);
+      if (stillOpen && U.isRendered(stillOpen)) this.pressElement(opener);
+
       if (after && after !== before) return { ok: true, text: text || after, value: after };
       if (el.value !== undefined && String(el.value) !== '' && !U.isPlaceholderText(String(el.value))) {
         return { ok: true, text: text || String(el.value), value: el.value };

@@ -436,6 +436,19 @@
       }
     },
 
+    /**
+     * Did the page reject what we just picked?
+     *
+     * Checked immediately and then once more after a short beat, because Kendo Validator
+     * renders its message asynchronously. A fixed wait after every record was one of the
+     * places a fill session felt like watching a robot click.
+     */
+    async wasRejected(el) {
+      if (U.hasValidationError(el)) return true;
+      await U.sleep(30);
+      return U.hasValidationError(el);
+    },
+
     /** Dropdowns: first valid record, retrying the next one if validation rejects it. */
     async fillDropdown(field, config, attempts) {
       const el = field.element;
@@ -478,8 +491,7 @@
           break;
         }
         // Spec §6: if the first record causes a validation failure, try the next one.
-        await U.sleep(80);
-        if (!U.hasValidationError(el)) {
+        if (!(await this.wasRejected(el))) {
           return { ok: true, value: res.text || res.value };
         }
         lastReason = 'Selected record "' + (res.text || res.value) + '" failed validation';
@@ -494,8 +506,7 @@
         for (let attempt = 0; attempt < 3; attempt++) {
           const res = KA.selectFirstNode(widget, attempt);
           if (!res.ok) return { ok: false, reason: res.reason };
-          await U.sleep(80);
-          if (!U.hasValidationError(el)) return { ok: true, value: res.text };
+          if (!(await this.wasRejected(el))) return { ok: true, value: res.text };
         }
         return { ok: false, reason: 'Every candidate tree node failed validation' };
       }

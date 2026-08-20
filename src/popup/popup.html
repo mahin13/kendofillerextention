@@ -3,6 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <title>Kendo Filler</title>
+    <!-- Paints the chosen theme before the body is parsed. A separate file, not inline:
+         MV3 extension pages run under script-src 'self', which blocks inline script. -->
+    <script src="theme-boot.js"></script>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
@@ -12,6 +15,16 @@
         <h1>Kendo Filler</h1>
         <p>Autofill • Save time • Test faster</p>
       </div>
+      <button
+        id="settingsBtn"
+        class="kf-gear"
+        type="button"
+        aria-expanded="false"
+        aria-controls="settingsView"
+        title="Theme, fill mode and control categories"
+      >
+        <span class="kf-gear-icon" aria-hidden="true">⚙</span><span id="settingsBtnText">Settings</span>
+      </button>
     </header>
 
     <main>
@@ -21,139 +34,188 @@
         <span class="kf-badge" id="kendoBadge" title="Click Scan or Autofill to inspect this page">not scanned</span>
       </section>
 
-      <section class="kf-block">
-        <label class="kf-row kf-row-mode" for="mode">
-          <span class="kf-row-title">Fill mode</span>
-          <select id="mode" class="kf-select kf-select-wide">
-            <option value="all">All Fields</option>
-            <option value="required">Required Fields Only</option>
-          </select>
-        </label>
-        <p class="kf-hint" id="modeHint">Fills every supported field detected on the page.</p>
-      </section>
+      <!-- ---------------- home ---------------- -->
+      <div id="homeView">
+        <section class="kf-block">
+          <h2 class="kf-block-title">This run</h2>
+          <div class="kf-card">
+            <p class="kf-summary" id="summaryMode">All fields</p>
+            <p class="kf-summary kf-summary-dim" id="summaryCats">9 of 9 control categories on</p>
+            <p class="kf-summary kf-summary-dim" id="summaryFlags">Every field • no highlighting</p>
+            <button class="kf-link" id="openSettings" type="button">Change these in Settings</button>
+          </div>
+        </section>
+      </div>
 
-      <section class="kf-block" id="categories">
-        <h2 class="kf-block-title">Control categories</h2>
+      <!-- ---------------- settings ---------------- -->
+      <div id="settingsView" hidden>
+        <section class="kf-block">
+          <h2 class="kf-block-title">Appearance</h2>
+          <div class="kf-segmented" role="radiogroup" aria-label="Theme">
+            <button type="button" class="kf-seg" data-theme-choice="light" role="radio" aria-checked="true">
+              Light
+            </button>
+            <button type="button" class="kf-seg" data-theme-choice="dark" role="radio" aria-checked="false">
+              Dark
+            </button>
+            <button type="button" class="kf-seg" data-theme-choice="system" role="radio" aria-checked="false">
+              Auto
+            </button>
+          </div>
+          <p class="kf-hint">Auto follows your operating system's light/dark setting.</p>
+        </section>
 
-        <div class="kf-row" data-cat="dropdown">
-          <label class="kf-switch">
-            <input type="checkbox" data-toggle="dropdown" />
-            <span class="kf-slider"></span>
+        <section class="kf-block">
+          <label class="kf-row kf-row-mode" for="mode">
+            <span class="kf-chip" aria-hidden="true">◎</span>
+            <span class="kf-row-title">Fill mode</span>
+            <select id="mode" class="kf-select kf-select-wide">
+              <option value="all">All Fields</option>
+              <option value="required">Required Fields Only</option>
+            </select>
           </label>
-          <span class="kf-row-title">Dropdowns <small>DropDownList / select</small></span>
-          <span class="kf-row-config kf-static">First valid record</span>
-        </div>
+          <p class="kf-hint" id="modeHint">Fills every supported field detected on the page.</p>
+        </section>
 
-        <div class="kf-row" data-cat="tree">
-          <label class="kf-switch">
-            <input type="checkbox" data-toggle="tree" />
-            <span class="kf-slider"></span>
+        <section class="kf-block" id="categories">
+          <h2 class="kf-block-title">Control categories</h2>
+
+          <div class="kf-row" data-cat="dropdown">
+            <span class="kf-chip" aria-hidden="true">▾</span>
+            <label class="kf-switch">
+              <input type="checkbox" data-toggle="dropdown" />
+              <span class="kf-slider"></span>
+            </label>
+            <span class="kf-row-title">Dropdowns <small>DropDownList / select / search</small></span>
+            <span class="kf-row-config kf-static">First record</span>
+          </div>
+
+          <div class="kf-row" data-cat="tree">
+            <span class="kf-chip" aria-hidden="true">⊞</span>
+            <label class="kf-switch">
+              <input type="checkbox" data-toggle="tree" />
+              <span class="kf-slider"></span>
+            </label>
+            <span class="kf-row-title">TreeView <small>Kendo TreeView</small></span>
+            <span class="kf-row-config kf-static">First record</span>
+          </div>
+
+          <div class="kf-row" data-cat="checkbox">
+            <span class="kf-chip" aria-hidden="true">✓</span>
+            <label class="kf-switch">
+              <input type="checkbox" data-toggle="checkbox" />
+              <span class="kf-slider"></span>
+            </label>
+            <span class="kf-row-title">Checkboxes</span>
+            <select class="kf-select" data-config="checkbox.state">
+              <option value="checked">Checked</option>
+              <option value="unchecked">Unchecked</option>
+            </select>
+          </div>
+
+          <div class="kf-row" data-cat="toggle">
+            <span class="kf-chip" aria-hidden="true">⇄</span>
+            <label class="kf-switch">
+              <input type="checkbox" data-toggle="toggle" />
+              <span class="kf-slider"></span>
+            </label>
+            <span class="kf-row-title">Toggles / Switches</span>
+            <select class="kf-select" data-config="toggle.default">
+              <option value="yes">Default: Yes</option>
+              <option value="no">Default: No</option>
+            </select>
+          </div>
+
+          <div class="kf-row" data-cat="radio">
+            <span class="kf-chip" aria-hidden="true">◉</span>
+            <label class="kf-switch">
+              <input type="checkbox" data-toggle="radio" />
+              <span class="kf-slider"></span>
+            </label>
+            <span class="kf-row-title">Radio buttons</span>
+            <select class="kf-select" data-config="radio.default">
+              <option value="yes">Default: Yes</option>
+              <option value="no">Default: No</option>
+            </select>
+          </div>
+
+          <div class="kf-row" data-cat="numeric">
+            <span class="kf-chip" aria-hidden="true">#</span>
+            <label class="kf-switch">
+              <input type="checkbox" data-toggle="numeric" />
+              <span class="kf-slider"></span>
+            </label>
+            <span class="kf-row-title">Numeric fields <small>random integer</small></span>
+            <span class="kf-range">
+              <input type="number" class="kf-num" data-config="numeric.min" aria-label="Numeric minimum" />
+              <em>–</em>
+              <input type="number" class="kf-num" data-config="numeric.max" aria-label="Numeric maximum" />
+            </span>
+          </div>
+
+          <div class="kf-row" data-cat="decimal">
+            <span class="kf-chip" aria-hidden="true">½</span>
+            <label class="kf-switch">
+              <input type="checkbox" data-toggle="decimal" />
+              <span class="kf-slider"></span>
+            </label>
+            <span class="kf-row-title">Decimal fields <small>random decimal</small></span>
+            <span class="kf-range">
+              <input type="number" class="kf-num" data-config="decimal.min" aria-label="Decimal minimum" />
+              <em>–</em>
+              <input type="number" class="kf-num" data-config="decimal.max" aria-label="Decimal maximum" />
+              <input
+                type="number"
+                class="kf-num kf-num-narrow"
+                data-config="decimal.decimals"
+                min="0"
+                max="6"
+                aria-label="Decimal places"
+                title="Decimal places used when the field does not declare its own precision"
+              />
+            </span>
+          </div>
+
+          <div class="kf-row" data-cat="freeform">
+            <span class="kf-chip" aria-hidden="true">✎</span>
+            <label class="kf-switch">
+              <input type="checkbox" data-toggle="freeform" />
+              <span class="kf-slider"></span>
+            </label>
+            <span class="kf-row-title">Free-form fields <small>text, email, url, date</small></span>
+            <span class="kf-row-config kf-static">Label + random number</span>
+          </div>
+
+          <div class="kf-row" data-cat="conditional">
+            <span class="kf-chip" aria-hidden="true">↳</span>
+            <label class="kf-switch">
+              <input type="checkbox" data-toggle="conditional" />
+              <span class="kf-slider"></span>
+            </label>
+            <span class="kf-row-title">Conditional fields <small>fields revealed by another value</small></span>
+            <span class="kf-row-config kf-static">Fill newly opened fields</span>
+          </div>
+        </section>
+
+        <section class="kf-block kf-extras">
+          <label class="kf-check">
+            <input type="checkbox" id="onlyEmpty" />
+            <span>Fill only empty fields</span>
           </label>
-          <span class="kf-row-title">TreeView <small>Kendo TreeView</small></span>
-          <span class="kf-row-config kf-static">First valid record</span>
-        </div>
-
-        <div class="kf-row" data-cat="checkbox">
-          <label class="kf-switch">
-            <input type="checkbox" data-toggle="checkbox" />
-            <span class="kf-slider"></span>
+          <label class="kf-check">
+            <input type="checkbox" id="highlight" />
+            <span>Highlight filled fields</span>
           </label>
-          <span class="kf-row-title">Checkboxes</span>
-          <select class="kf-select" data-config="checkbox.state">
-            <option value="checked">Checked</option>
-            <option value="unchecked">Unchecked</option>
-          </select>
-        </div>
+        </section>
 
-        <div class="kf-row" data-cat="toggle">
-          <label class="kf-switch">
-            <input type="checkbox" data-toggle="toggle" />
-            <span class="kf-slider"></span>
-          </label>
-          <span class="kf-row-title">Toggles / Switches</span>
-          <select class="kf-select" data-config="toggle.default">
-            <option value="yes">Default: Yes</option>
-            <option value="no">Default: No</option>
-          </select>
-        </div>
+        <section class="kf-block kf-settings-foot">
+          <button class="kf-link" id="reset" type="button">Reset configuration</button>
+          <button class="kf-btn kf-btn-ghost" id="closeSettings" type="button">Done</button>
+        </section>
+      </div>
+    </main>
 
-        <div class="kf-row" data-cat="radio">
-          <label class="kf-switch">
-            <input type="checkbox" data-toggle="radio" />
-            <span class="kf-slider"></span>
-          </label>
-          <span class="kf-row-title">Radio buttons</span>
-          <select class="kf-select" data-config="radio.default">
-            <option value="yes">Default: Yes</option>
-            <option value="no">Default: No</option>
-          </select>
-        </div>
-
-        <div class="kf-row" data-cat="numeric">
-          <label class="kf-switch">
-            <input type="checkbox" data-toggle="numeric" />
-            <span class="kf-slider"></span>
-          </label>
-          <span class="kf-row-title">Numeric fields <small>random integer</small></span>
-          <span class="kf-range">
-            <input type="number" class="kf-num" data-config="numeric.min" aria-label="Numeric minimum" />
-            <em>–</em>
-            <input type="number" class="kf-num" data-config="numeric.max" aria-label="Numeric maximum" />
-          </span>
-        </div>
-
-        <div class="kf-row" data-cat="decimal">
-          <label class="kf-switch">
-            <input type="checkbox" data-toggle="decimal" />
-            <span class="kf-slider"></span>
-          </label>
-          <span class="kf-row-title">Decimal fields <small>random decimal</small></span>
-          <span class="kf-range">
-            <input type="number" class="kf-num" data-config="decimal.min" aria-label="Decimal minimum" />
-            <em>–</em>
-            <input type="number" class="kf-num" data-config="decimal.max" aria-label="Decimal maximum" />
-            <input
-              type="number"
-              class="kf-num kf-num-narrow"
-              data-config="decimal.decimals"
-              min="0"
-              max="6"
-              aria-label="Decimal places"
-              title="Decimal places used when the field does not declare its own precision"
-            />
-          </span>
-        </div>
-
-        <div class="kf-row" data-cat="freeform">
-          <label class="kf-switch">
-            <input type="checkbox" data-toggle="freeform" />
-            <span class="kf-slider"></span>
-          </label>
-          <span class="kf-row-title">Free-form fields <small>text, email, url, date</small></span>
-          <span class="kf-row-config kf-static">Label + random number</span>
-        </div>
-
-        <div class="kf-row" data-cat="conditional">
-          <label class="kf-switch">
-            <input type="checkbox" data-toggle="conditional" />
-            <span class="kf-slider"></span>
-          </label>
-          <span class="kf-row-title">Conditional fields <small>fields revealed by another value</small></span>
-          <span class="kf-row-config kf-static">Fill newly opened fields</span>
-        </div>
-      </section>
-
-      <section class="kf-block kf-extras">
-        <label class="kf-check">
-          <input type="checkbox" id="onlyEmpty" />
-          <span>Fill only empty fields</span>
-        </label>
-        <label class="kf-check">
-          <input type="checkbox" id="highlight" />
-          <span>Highlight filled fields</span>
-        </label>
-      </section>
-
+    <div class="kf-bottom">
       <section class="kf-actions">
         <button id="autofill" class="kf-btn kf-btn-primary">AUTOFILL</button>
         <button id="scan" class="kf-btn kf-btn-ghost" title="Count supported fields without filling anything">
@@ -172,12 +234,7 @@
         <button class="kf-link" id="toggleDiag" hidden>Show diagnostics</button>
         <div class="kf-diag" id="diag" hidden></div>
       </section>
-    </main>
-
-    <footer class="kf-footer">
-      <button class="kf-link" id="reset">Reset configuration</button>
-      <button class="kf-link" id="demo">Open demo page</button>
-    </footer>
+    </div>
 
     <script src="popup.js"></script>
   </body>

@@ -29,6 +29,7 @@ const DEFAULT_CONFIG = {
   mode: 'all',
   onlyEmpty: false,
   highlight: false,
+  theme: 'light', // popup appearance: 'light' | 'dark' | 'system'
   maxPasses: 10,
   timeBudgetMs: 60000,
   categories: {
@@ -148,11 +149,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           await ensureInjected(tab.id);
           const res = await callBridge(tab.id, 'autofill', msg.config, 180000);
           sendResponse(res);
-          return;
-        }
-        case 'openDemo': {
-          await chrome.tabs.create({ url: chrome.runtime.getURL('demo/demo.html') });
-          sendResponse({ ok: true });
           return;
         }
         default:

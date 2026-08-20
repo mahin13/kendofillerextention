@@ -17,6 +17,14 @@ node test/shell-exclusion.test.cjs   # the real RiskMonitor shell: navbar, unive
                                      # widget popups vs a Kendo Window form
 node test/editor-and-toggle.test.cjs # Kendo Editor ("HTML box") in inline and iframe mode,
                                      # character-counter limits, and the switch timing fix
+node test/popup-ui.test.cjs        # the popup shell: Settings view, Light/Dark/Auto theme,
+                                     # the home summary, reset — loaded against a stubbed
+                                     # chrome API so a dead handler cannot slip through
+node test/searchable-dropdown.test.cjs
+                                     # dropdowns with a search box: a stale filter hiding
+                                     # loaded records, a list that only loads what is typed
+                                     # (widget API and markup-only), and a Kendo widget
+                                     # built on <input type="hidden">
 ```
 
 Note: jsdom has no layout engine, so the harnesses stub `getBoundingClientRect`. Visibility

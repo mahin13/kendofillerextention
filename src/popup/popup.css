@@ -1,37 +1,180 @@
 /* Kendo Filler — popup styling.
-   Palette taken from the product logo: deep navy, Kendo blue, red accent. */
+ *
+ * LOOK
+ * ----
+ * A light, card-based panel: one scrolling column of rounded rows (icon chip, title,
+ * sub-label, control on the right), a brand header carrying the logo, and one large primary
+ * action pinned to the bottom so it is always in reach.
+ *
+ * THEMING
+ * -------
+ * Every colour is a token on :root, so a theme is only a different set of tokens:
+ *   [data-theme="light"]   (default)
+ *   [data-theme="dark"]
+ *   [data-theme="system"]  + prefers-color-scheme
+ * popup.html stamps the attribute before the first paint, so switching never flashes.
+ */
 
-:root {
-  --navy: #101c33;
-  --navy-2: #17253f;
-  --navy-3: #1e2f4d;
+:root,
+:root[data-theme="light"] {
+  --bg: #f4f7fb; /* panel background behind the cards */
+  --surface: #ffffff; /* card / input surface */
+  --surface-2: #eef3fa; /* strips, chips, segmented track */
+  --border: #e2e8f2;
+  --border-strong: #cfd9e8;
+  --blue: #1f7ae0;
+  --blue-hi: #1668c8;
+  --blue-soft: rgba(31, 122, 224, 0.1);
+  --red: #d93025;
+  --text: #16233a;
+  --text-dim: #64748b;
+  --ok: #0f8a4d;
+  --warn: #96601a;
+  --err: #c62828;
+  --code-bg: #f7f9fc;
+  --slider-off: #cbd5e3;
+  --scroll: #cfd9e8;
+  --scroll-hi: #b3c1d6;
+  --card-shadow: 0 1px 2px rgba(22, 35, 58, 0.06);
+  --bar-shadow: 0 -8px 18px rgba(22, 35, 58, 0.08);
+}
+
+:root[data-theme="dark"] {
+  --bg: #101c33;
+  --surface: #17253f;
+  --surface-2: #1e2f4d;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.18);
   --blue: #1f7ae0;
   --blue-hi: #3b93ff;
+  --blue-soft: rgba(59, 147, 255, 0.16);
   --red: #e03b3b;
   --text: #eaf1fb;
   --text-dim: #9db0cb;
-  --line: rgba(255, 255, 255, 0.09);
   --ok: #3ddc84;
   --warn: #f0b429;
   --err: #ff6b6b;
+  --code-bg: #0c1526;
+  --slider-off: #35476a;
+  --scroll: #2c3f63;
+  --scroll-hi: #3c5488;
+  --card-shadow: none;
+  --bar-shadow: 0 -8px 18px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] {
+    --bg: #101c33;
+    --surface: #17253f;
+    --surface-2: #1e2f4d;
+    --border: rgba(255, 255, 255, 0.09);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --blue-hi: #3b93ff;
+    --blue-soft: rgba(59, 147, 255, 0.16);
+    --red: #e03b3b;
+    --text: #eaf1fb;
+    --text-dim: #9db0cb;
+    --ok: #3ddc84;
+    --warn: #f0b429;
+    --err: #ff6b6b;
+    --code-bg: #0c1526;
+    --slider-off: #35476a;
+    --scroll: #2c3f63;
+    --scroll-hi: #3c5488;
+    --card-shadow: none;
+    --bar-shadow: 0 -8px 18px rgba(0, 0, 0, 0.4);
+  }
 }
 
 * {
   box-sizing: border-box;
 }
 
+/* popup.js shows and hides the views, the counts strip and the diagnostics with the
+   "hidden" attribute. A class that sets display (.kf-counts does) outranks the UA rule
+   for [hidden], which left a "0 detected / 0 filled" strip on screen before any run --
+   so state it once here and let nothing outrank it. */
+[hidden] {
+  display: none !important;
+}
+
+/* The popup box itself. Chrome sizes a popup from its document, so html carries the same
+   fixed box as body — otherwise body has nothing to resolve its height against and the
+   panel collapses to little more than the header. */
 html,
 body {
   margin: 0;
   padding: 0;
+  width: 400px;
+  height: 600px;
 }
 
+/* Fixed-height column: header, one scrolling area (home or settings), pinned action bar.
+   Chrome caps an extension popup at 600px and would otherwise scroll the whole document,
+   pushing AUTOFILL below the fold.
+
+   No `max-height: 100vh` here: a popup viewport is derived from its own content, so vh
+   resolves against a provisional viewport on the first layout and clamps the panel to a
+   couple of hundred pixels — which starves `main` of height and makes the Settings gear
+   look dead, because the view it swaps in has nowhere to paint. */
 body {
-  width: 400px;
-  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
   color: var(--text);
   font: 13px/1.45 "Segoe UI", Roboto, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+.kf-header,
+.kf-bottom {
+  flex: 0 0 auto;
+}
+
+main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 4px;
+}
+
+.kf-bottom {
+  max-height: 44%;
+  overflow-y: auto;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  box-shadow: var(--bar-shadow);
+}
+
+/* Unobtrusive scrollbars in both themes. */
+main::-webkit-scrollbar,
+.kf-bottom::-webkit-scrollbar,
+.kf-diag::-webkit-scrollbar {
+  width: 10px;
+}
+
+main::-webkit-scrollbar-track,
+.kf-bottom::-webkit-scrollbar-track,
+.kf-diag::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+main::-webkit-scrollbar-thumb,
+.kf-bottom::-webkit-scrollbar-thumb,
+.kf-diag::-webkit-scrollbar-thumb {
+  background: var(--scroll);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+main::-webkit-scrollbar-thumb:hover,
+.kf-bottom::-webkit-scrollbar-thumb:hover,
+.kf-diag::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-hi);
+  background-clip: content-box;
 }
 
 /* ---------- header ---------- */
@@ -40,32 +183,79 @@ body {
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  background: linear-gradient(135deg, #0d1729 0%, #16294b 55%, #1f4f96 100%);
-  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
 }
 
 .kf-logo {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 9px;
   flex: 0 0 auto;
-  /* transparent: the artwork carries its own shape on the gradient header */
-  background: transparent;
+  background: #101c33; /* the artwork is drawn for a dark ground */
+}
+
+.kf-header-text {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .kf-header-text h1 {
   margin: 0;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.2px;
 }
 
 .kf-header-text p {
   margin: 1px 0 0;
-  font-size: 10.5px;
+  font-size: 10px;
   letter-spacing: 1.1px;
   text-transform: uppercase;
   color: var(--text-dim);
+}
+
+/* ---------- settings button ---------- */
+.kf-gear {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.kf-gear:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.kf-gear[aria-expanded="true"] {
+  background: var(--blue-soft);
+  border-color: var(--blue);
+  color: var(--blue-hi);
+}
+
+.kf-gear:focus-visible {
+  outline: 2px solid var(--blue-hi);
+  outline-offset: 1px;
+}
+
+.kf-gear-icon {
+  font-size: 13px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.kf-gear[aria-expanded="true"] .kf-gear-icon {
+  transform: rotate(60deg);
 }
 
 /* ---------- scope ---------- */
@@ -74,8 +264,8 @@ body {
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  background: var(--navy-2);
-  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
   font-size: 12px;
 }
 
@@ -96,33 +286,32 @@ body {
 .kf-badge {
   flex: 0 0 auto;
   font-size: 10px;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-2);
   color: var(--text-dim);
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
 }
 
 .kf-badge.kf-badge-on {
-  background: rgba(61, 220, 132, 0.14);
+  background: rgba(15, 138, 77, 0.12);
   color: var(--ok);
-  border-color: rgba(61, 220, 132, 0.35);
+  border-color: rgba(15, 138, 77, 0.3);
 }
 
 .kf-badge.kf-badge-off {
-  background: rgba(240, 180, 41, 0.13);
+  background: rgba(150, 96, 26, 0.12);
   color: var(--warn);
-  border-color: rgba(240, 180, 41, 0.3);
+  border-color: rgba(150, 96, 26, 0.28);
 }
 
 /* ---------- blocks ---------- */
 .kf-block {
-  padding: 10px 14px 12px;
-  border-bottom: 1px solid var(--line);
+  padding: 12px 14px 4px;
 }
 
 .kf-block-title {
-  margin: 0 0 6px;
+  margin: 0 0 8px;
   font-size: 10px;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -130,33 +319,120 @@ body {
 }
 
 .kf-hint {
-  margin: 6px 0 0;
+  margin: 8px 2px 0;
   font-size: 11px;
   color: var(--text-dim);
 }
 
+/* ---------- home summary ---------- */
+.kf-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  padding: 12px 14px;
+}
+
+.kf-summary {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.kf-summary-dim {
+  margin-top: 3px;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+#openSettings {
+  margin-top: 10px;
+}
+
+/* ---------- theme picker ---------- */
+.kf-segmented {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.kf-seg {
+  flex: 1 1 0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 4px;
+  cursor: pointer;
+}
+
+.kf-seg:hover {
+  color: var(--text);
+}
+
+.kf-seg[aria-checked="true"] {
+  background: var(--surface);
+  color: var(--blue-hi);
+  box-shadow: var(--card-shadow);
+}
+
+.kf-seg:focus-visible {
+  outline: 2px solid var(--blue-hi);
+  outline-offset: 1px;
+}
+
+/* ---------- rows: one card each ---------- */
 .kf-row {
   display: flex;
   align-items: center;
-  gap: 9px;
-  min-height: 32px;
-  padding: 3px 0;
+  gap: 10px;
+  min-height: 46px;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
 }
 
 .kf-row-mode {
-  gap: 10px;
+  justify-content: space-between;
+}
+
+.kf-chip {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 700;
 }
 
 .kf-row-title {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  line-height: 1.25;
+  line-height: 1.3;
+  font-weight: 600;
 }
 
 .kf-row-title small {
   color: var(--text-dim);
   font-size: 10.5px;
+  font-weight: 400;
 }
 
 .kf-row-config {
@@ -168,28 +444,29 @@ body {
 .kf-static {
   padding-right: 2px;
   text-align: right;
-  max-width: 132px;
+  max-width: 120px;
 }
 
+.kf-row.kf-off .kf-chip,
 .kf-row.kf-off .kf-row-title,
 .kf-row.kf-off .kf-row-config {
-  opacity: 0.45;
+  opacity: 0.5;
 }
 
 .kf-row.kf-off .kf-select,
 .kf-row.kf-off .kf-num {
-  opacity: 0.45;
+  opacity: 0.5;
   pointer-events: none;
 }
 
 /* ---------- controls ---------- */
 .kf-select,
 .kf-num {
-  background: var(--navy-3);
+  background: var(--surface);
   color: var(--text);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 4px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 6px 7px;
   font: inherit;
   font-size: 11.5px;
 }
@@ -217,7 +494,7 @@ body {
 }
 
 .kf-num {
-  width: 58px;
+  width: 56px;
   text-align: right;
 }
 
@@ -228,9 +505,10 @@ body {
 .kf-switch {
   position: relative;
   flex: 0 0 auto;
-  width: 34px;
-  height: 18px;
+  width: 38px;
+  height: 22px;
   display: inline-block;
+  order: 9; /* the toggle sits at the far right of its card, as in a settings list */
 }
 
 .kf-switch input {
@@ -245,7 +523,7 @@ body {
 .kf-slider {
   position: absolute;
   inset: 0;
-  background: #35476a;
+  background: var(--slider-off);
   border-radius: 999px;
   transition: background 0.15s ease;
   pointer-events: none;
@@ -256,10 +534,11 @@ body {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
   transition: transform 0.15s ease;
 }
 
@@ -277,45 +556,67 @@ body {
 
 .kf-extras {
   display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0;
 }
 
 .kf-check {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11.5px;
-  color: var(--text-dim);
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  font-size: 12.5px;
   cursor: pointer;
 }
 
 .kf-check input {
   accent-color: var(--blue);
+  width: 15px;
+  height: 15px;
+}
+
+/* ---------- settings foot ---------- */
+.kf-settings-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 14px;
+}
+
+.kf-settings-foot .kf-link {
+  margin-top: 0;
 }
 
 /* ---------- actions ---------- */
 .kf-actions {
   display: flex;
   gap: 8px;
-  padding: 12px 14px;
+  padding: 12px 14px 10px;
 }
 
 .kf-btn {
   font: inherit;
   font-weight: 700;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid transparent;
   cursor: pointer;
   padding: 9px 12px;
 }
 
+/* The primary action is deliberately big: it is the one thing this popup exists for. */
 .kf-btn-primary {
   flex: 1 1 auto;
+  min-height: 50px;
+  font-size: 15px;
+  letter-spacing: 1.2px;
   background: linear-gradient(180deg, var(--blue-hi), var(--blue));
   color: #fff;
-  letter-spacing: 1px;
-  box-shadow: 0 2px 10px rgba(31, 122, 224, 0.35);
+  box-shadow: 0 3px 12px rgba(31, 122, 224, 0.35);
 }
 
 .kf-btn-primary:hover:not(:disabled) {
@@ -323,15 +624,21 @@ body {
 }
 
 .kf-btn-ghost {
-  background: transparent;
-  border-color: var(--line);
+  background: var(--surface);
+  border-color: var(--border-strong);
   color: var(--text-dim);
   font-weight: 600;
 }
 
 .kf-btn-ghost:hover:not(:disabled) {
   color: var(--text);
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: var(--blue);
+}
+
+#scan {
+  flex: 0 0 82px;
+  min-height: 50px;
+  font-size: 13px;
 }
 
 .kf-btn:disabled {
@@ -342,9 +649,9 @@ body {
 .kf-btn-primary.kf-busy::after {
   content: "";
   display: inline-block;
-  width: 11px;
-  height: 11px;
-  margin-left: 8px;
+  width: 12px;
+  height: 12px;
+  margin-left: 9px;
   vertical-align: -1px;
   border: 2px solid rgba(255, 255, 255, 0.4);
   border-top-color: #fff;
@@ -383,10 +690,10 @@ body {
 .kf-count {
   font-size: 11px;
   color: var(--text-dim);
-  background: var(--navy-2);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 3px 7px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 3px 8px;
 }
 
 .kf-count b {
@@ -412,24 +719,24 @@ body {
   margin-top: 8px;
   color: var(--blue-hi);
   font: inherit;
-  font-size: 11px;
+  font-size: 11.5px;
   cursor: pointer;
   text-decoration: underline;
 }
 
 .kf-diag {
   margin-top: 8px;
-  max-height: 210px;
+  max-height: 170px;
   overflow: auto;
-  background: #0c1526;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px;
   font-size: 11px;
 }
 
 .kf-diag h3 {
-  margin: 6px 0 4px;
+  margin: 8px 0 4px;
   font-size: 10px;
   letter-spacing: 0.8px;
   text-transform: uppercase;
@@ -470,17 +777,4 @@ body {
   content: " *";
   color: var(--red);
   font-weight: 700;
-}
-
-/* ---------- footer ---------- */
-.kf-footer {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 14px 12px;
-  border-top: 1px solid var(--line);
-  background: var(--navy-2);
-}
-
-.kf-footer .kf-link {
-  margin-top: 0;
 }
